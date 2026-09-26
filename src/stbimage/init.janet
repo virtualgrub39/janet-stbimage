@@ -1,7 +1,5 @@
 (import _stbimage :as core)
 
-(defn load [path]
-    (let [st os/stat path]
-        (when (and st (= (st :mode) :file))
-            (error (string "File not found: " path))))
-    (core/load path))
+(defn load [path] (core/load path))
+(defn loadf [path] (core/loadf path))
+(defn info [path] (core/info path))
