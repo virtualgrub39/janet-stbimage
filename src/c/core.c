@@ -7,12 +7,16 @@
 
 static Janet cfun_load (int32_t argc, Janet *argv)
 {
-    janet_fixarity(argc, 1);
+    janet_arity(argc, 1, 2);
     const char *filename = janet_getcstring (argv, 0);
+    int req_comp = (argc == 2) ? janet_getinteger(argv, 1) : 0;
 
     int w, h, channels;
     unsigned char *data = stbi_load (filename, &w, &h, &channels, 0);
     if (!data) janet_panicf ("Failed to load image from `%s`: %s", filename, stbi_failure_reason());
+
+    int actual_channels = req_comp ? req_comp : channels;
+    int32_t data_len = w * h * actual_channels;
 
     JanetBuffer *buf = janet_buffer (w * h * channels);
     janet_buffer_push_bytes (buf, data, w * h * channels); // FIXME: get rid of copy here ("abstract type"?)
@@ -30,11 +34,12 @@ static Janet cfun_load (int32_t argc, Janet *argv)
 
 static Janet cfun_loadf (int32_t argc, Janet *argv)
 {
-    janet_fixarity(argc, 1);
+    janet_arity(argc, 1, 2);
     const char *filename = janet_getcstring (argv, 0);
+    int req_comp = (argc == 2) ? janet_getinteger(argv, 1) : 0;
 
     int w, h, channels;
-    float *data = stbi_loadf (filename, &w, &h, &channels, 0);
+    float *data = stbi_loadf (filename, &w, &h, &channels, req_comp);
     if (!data) janet_panicf ("Failed to load image from `%s`: %s", filename, stbi_failure_reason());
 
     JanetArray *arr = janet_array (w * h * channels);
@@ -49,7 +54,7 @@ static Janet cfun_loadf (int32_t argc, Janet *argv)
     janet_struct_put (st, janet_ckeywordv ("width"), janet_wrap_integer (w));
     janet_struct_put (st, janet_ckeywordv ("height"), janet_wrap_integer (h));
     janet_struct_put (st, janet_ckeywordv ("channels"), janet_wrap_integer (channels));
-    janet_struct_put (st, janet_ckeywordv ("data"), janet_wrap_buffer (arr));
+    janet_struct_put (st, janet_ckeywordv ("data"), janet_wrap_array (arr));
 
     return janet_wrap_struct (st);
 }
@@ -72,13 +77,90 @@ static Janet cfun_info (int32_t argc, Janet *argv)
 }
 
 // TODO: callback API?
+// TODO: use stbi_write_*_to_func for actual error reporting
 
-// TODO: image_write API
+static Janet cfun_write_png (int32_t argc, Janet *argv)
+{
+    janet_fixarity (argc, 6);
+    const char *filename = janet_getcstring (argv, 0);
+    const int w = janet_getinteger (argv, 1);
+    const int h = janet_getinteger (argv, 2);
+    const int comp = janet_getinteger (argv, 3);
+    const JanetBuffer *data = janet_getbuffer (argv, 4);
+    const int stride = janet_getinteger (argv, 5);
+
+    int ok = stbi_write_png (filename, w, h, comp, data->data, stride);
+
+    if (ok) return janet_wrap_true();
+    return janet_wrap_false();
+}
+
+static Janet cfun_write_bmp (int32_t argc, Janet *argv)
+{
+    janet_fixarity (argc, 5);
+    const char *filename = janet_getcstring (argv, 0);
+    const int w = janet_getinteger (argv, 1);
+    const int h = janet_getinteger (argv, 2);
+    const int comp = janet_getinteger (argv, 3);
+    const JanetBuffer *data = janet_getbuffer (argv, 4);
+
+    int ok = stbi_write_bmp (filename, w, h, comp, data->data);
+
+    if (ok) return janet_wrap_true();
+    return janet_wrap_false();
+}
+
+static Janet cfun_write_tga (int32_t argc, Janet *argv)
+{
+    janet_fixarity (argc, 5);
+    const char *filename = janet_getcstring (argv, 0);
+    const int w = janet_getinteger (argv, 1);
+    const int h = janet_getinteger (argv, 2);
+    const int comp = janet_getinteger (argv, 3);
+    const JanetBuffer *data = janet_getbuffer (argv, 4);
+
+    int ok = stbi_write_tga (filename, w, h, comp, data->data);
+
+    if (ok) return janet_wrap_true();
+    return janet_wrap_false();
+}
+
+static Janet cfun_write_jpg (int32_t argc, Janet *argv)
+{
+    janet_fixarity (argc, 6);
+    const char *filename = janet_getcstring (argv, 0);
+    const int w = janet_getinteger (argv, 1);
+    const int h = janet_getinteger (argv, 2);
+    const int comp = janet_getinteger (argv, 3);
+    const JanetBuffer *data = janet_getbuffer (argv, 4);
+    const int quality = janet_getinteger (argv, 5);
+
+    int ok = stbi_write_jpg (filename, w, h, comp, data->data, quality);
+
+    if (ok) return janet_wrap_true();
+    return janet_wrap_false();
+}
+
+// static Janet cfun_write_hdr (int32_t argc, Janet *argv)
+// {
+//     janet_fixarity (argc, 5);
+//     const char *filename = janet_getcstring (argv, 0);
+//     const int w = janet_getinteger (argv, 1);
+//     const int h = janet_getinteger (argv, 2);
+//     const int comp = janet_getinteger (argv, 3);
+//     const JanetArray *arr = janet_getarray (argv, 4);
+
+//     // TODO: pain in the ass
+// }
 
 static const JanetReg cfuns[] = {
     { "load", cfun_load, "Loads an image." },
     { "loadf", cfun_loadf, "Loads an image with float-per-channel data." },
     { "info", cfun_info, "Loads image information." },
+    { "write-png", cfun_write_png, "Writes image in png format." },
+    { "write-bmp", cfun_write_png, "Writes image in bmp format." },
+    { "write-tga", cfun_write_png, "Writes image in tga format." },
+    { "write-jpg", cfun_write_png, "Writes image in jpg format." },
     {NULL, NULL, NULL}
 };
 
