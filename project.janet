@@ -5,7 +5,7 @@
     :license "BSD-2-Clause"
     :url "https://github.com/virtualgrub39/janet-stbimage"
     :repo "git+https://github.com/virtualgrub39/janet-stbimage.git"
-    :version "0.0.2")
+    :version "1.0.0")
 
 (declare-native
     :name "_stbimage"
