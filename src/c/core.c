@@ -222,9 +222,9 @@ static const JanetReg cfuns[] = {
     { "loadf-mem", cfun_loadf_mem, "Loads an image with float-per-channel data from memory." },
     { "info", cfun_info, "Loads image information." },
     { "write-png", cfun_write_png, "Writes image in png format." },
-    { "write-bmp", cfun_write_png, "Writes image in bmp format." },
-    { "write-tga", cfun_write_png, "Writes image in tga format." },
-    { "write-jpg", cfun_write_png, "Writes image in jpg format." },
+    { "write-bmp", cfun_write_bmp, "Writes image in bmp format." },
+    { "write-tga", cfun_write_tga, "Writes image in tga format." },
+    { "write-jpg", cfun_write_jpg, "Writes image in jpg format." },
     { "set-flip-vertically", cfun_set_flip_vertically, "" },
     {NULL, NULL, NULL}
 };
